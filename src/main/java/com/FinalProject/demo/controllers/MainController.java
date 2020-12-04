@@ -17,7 +17,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DateFormat;
-import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -27,8 +27,9 @@ public class MainController {
     DateFormat formatter = new SimpleDateFormat("MM-dd-yyyy");
     Date date = new Date();
     String currentDate = formatter.format(date);
+    //Formatted to match API
+    DateFormat formatter2 = new SimpleDateFormat("M/d/yy");
 
-    DecimalFormat commaFormat = new DecimalFormat("#,###");
 
 
 
@@ -46,15 +47,11 @@ public class MainController {
         return mv;
     }
 
-
     @RequestMapping(value = "/login", method = RequestMethod.GET)
         public ModelAndView getLogin(@RequestParam("userName") String userName, @RequestParam("passWord") String passWord) {
 
         Users userLogin = usersRepo.findByUserName(userName);
-
         String userPassword = userLogin.getPassword();
-        String userId = userLogin.getId();
-        currentUser.setUserId(userId);
 
             if(passWord.equals(userPassword)) {
                 ModelAndView mv = new ModelAndView("redirect:/");
@@ -74,17 +71,17 @@ public class MainController {
         String countries = getAllCountries();
         try {
             JSONArray json = new JSONArray(countries);
-            Country[] allCountries = new Country[100];
-            for(int i = 0; i < 100; i++) {
+            Country[] allCountries = new Country[50];
+            for(int i = 0; i < 50; i++) {
                 JSONObject countryList = json.getJSONObject(i);
                 String country = countryList.getString("country");
                 allCountries[i] = new Country();
                 allCountries[i].setCountryName(country);
                 allCountries[i].setDate(currentDate);
-                allCountries[i].setTotalCases(Integer.parseInt(countryList.getString("cases")));
-                allCountries[i].setNewCases(Integer.parseInt((countryList.getString("todayCases"))));
-                allCountries[i].setTotalDeaths(Integer.parseInt((countryList.getString("deaths"))));
-                allCountries[i].setRecovered(Integer.parseInt((countryList.getString("recovered"))));
+                allCountries[i].setTotalCases((countryList.getInt("cases")));
+                allCountries[i].setNewCases((countryList.getInt("todayCases")));
+                allCountries[i].setTotalDeaths((countryList.getInt("deaths")));
+                allCountries[i].setRecovered((countryList.getInt("recovered")));
 
             }
             mv.addObject("countryNames", allCountries);
@@ -96,21 +93,23 @@ public class MainController {
     }
 
     @RequestMapping(value = "/get", method = RequestMethod.GET)
-        public ModelAndView getCountry(@RequestParam ("country")String countryIso) {
+        public ModelAndView getCountry(@RequestParam ("country")String countryIso, @RequestParam ("date") String datePicked) throws ParseException {
         ModelAndView mv = new ModelAndView("viewCountry");
         String country = getCountryByISO(countryIso);
+
+        DateFormat formatFor = new SimpleDateFormat("yyyy-MM-dd");
+        Date foundDate = formatFor.parse(datePicked);
+        String dateSelected = formatter2.format(foundDate);
+        String dateForView = formatter.format(foundDate);
+
         Country selectedCountry = new Country();
         try {
-
             JSONObject json = new JSONObject(country);
-            String casesString = json.get("cases").toString();
-            int cases = Integer.parseInt(casesString);
             selectedCountry.setCountryName(json.get("country").toString());
-            selectedCountry.setTotalCases();
-            selectedCountry.setDate(currentDate);
-            selectedCountry.setTotalDeaths(Integer.parseInt(json.get("deaths").toString()));
-            selectedCountry.setNewCases(Integer.parseInt(json.get("todayCases").toString()));
-            selectedCountry.setRecovered(Integer.parseInt(json.get("recovered").toString()));
+            selectedCountry.setTotalCases(json.getJSONObject("timeline").getJSONObject("cases").getInt(dateSelected));
+            selectedCountry.setDate(dateForView);
+            selectedCountry.setTotalDeaths(json.getJSONObject("timeline").getJSONObject("deaths").getInt(dateSelected));
+            selectedCountry.setRecovered(json.getJSONObject("timeline").getJSONObject("recovered").getInt(dateSelected));
             mv.addObject("country", selectedCountry);
 
         }
@@ -118,28 +117,58 @@ public class MainController {
             System.out.println(ex.toString());
         }
         return mv;
+
     }
 
     @RequestMapping(value = "/save/{countryName}", method = RequestMethod.POST)
-    public ModelAndView save(@PathVariable("countryName") String name) {
+    public ModelAndView save(@PathVariable("countryName") String name, @RequestParam ("date") String datePicked) throws ParseException {
                 ModelAndView mv = new ModelAndView("redirect:/");
-        String country = getCountryByISO(name);
-        try {
-            JSONObject json = new JSONObject(country);
-            Country countryToSave = new Country();
-            countryToSave.setId(UUID.randomUUID().toString());
-            countryToSave.setCountryName(json.get("country").toString());
-            countryToSave.setDate(currentDate);
-            countryToSave.setTotalCases(Integer.parseInt(json.getString("cases")));
-            countryToSave.setNewCases(Integer.parseInt(json.getString("todayCases")));
-            countryToSave.setTotalDeaths(Integer.parseInt(json.getString("deaths")));
-            countryToSave.setRecovered(Integer.parseInt(json.getString("recovered")));
-            countryRepo.save(countryToSave);
-        }
-        catch (Exception ex) {
-            System.out.println(ex.toString());
-        }
-        return mv;
+
+                DateFormat formatFor = new SimpleDateFormat("yyyy-MM-dd");
+                Date htmlDate = formatFor.parse(datePicked);
+                String date2 = formatFor.format(htmlDate);
+                String dateSelected;
+
+                if(datePicked.equals("noDate") || datePicked.equals(date2)) {
+                    try {
+                        String country = getCountry(name);
+                        JSONObject json = new JSONObject(country);
+                        Country countryToSave = new Country();
+                        countryToSave.setId(UUID.randomUUID().toString());
+                        countryToSave.setCountryName(json.get("country").toString());
+                        countryToSave.setDate(currentDate);
+                        countryToSave.setTotalCases(json.getInt("cases"));
+                        countryToSave.setTotalDeaths(json.getInt("deaths"));
+                        countryToSave.setRecovered(json.getInt("recovered"));
+                        countryRepo.save(countryToSave);
+                    } catch (Exception ex) {
+                        System.out.println(ex.toString());
+
+                    }
+                }
+                else{
+                        Date foundDate = formatter2.parse(datePicked);
+                        dateSelected = formatter2.format(foundDate);
+                        String country = getCountryByISO(name);
+                        String dateStored = formatter.format(foundDate);
+                    try {
+                        getCountryByISO(name);
+                        JSONObject json = new JSONObject(country);
+                        Country countryToSave = new Country();
+                        countryToSave.setId(UUID.randomUUID().toString());
+                        countryToSave.setCountryName(json.get("country").toString());
+                        countryToSave.setDate(dateStored);
+                        countryToSave.setTotalCases(json.getJSONObject("timeline").getJSONObject("cases").getInt(dateSelected));
+                        countryToSave.setTotalDeaths(json.getJSONObject("timeline").getJSONObject("deaths").getInt(dateSelected));
+                        countryToSave.setRecovered(json.getJSONObject("timeline").getJSONObject("recovered").getInt(dateSelected));
+                        countryRepo.save(countryToSave);
+                    }
+                    catch (Exception ex) {
+                        System.out.println(ex.toString());
+                    }
+                }
+
+                return mv;
     }
 
     @RequestMapping(value = "/viewSnapshots")
@@ -178,7 +207,7 @@ public class MainController {
         Optional<Country> countryRecord = countryRepo.findById(id);
         Country country = countryRecord.get();
 
-        country.setTotalCases(Integer.parseInt(totalCases));
+       // country.setTotalCases(Integer.parseInt(totalCases));
         country.setTotalDeaths(Integer.parseInt(totalDeaths));
         country.setNewCases(Integer.parseInt(newCases));
         countryRepo.save(country);
@@ -190,7 +219,7 @@ public class MainController {
 
     private String getCountryByISO(String ISO) {
         try {
-            URL urlForGetRequest = new URL("https://corona.lmao.ninja/v2/countries/" + ISO + "?yesterday=true&strict=true&query");
+            URL urlForGetRequest = new URL("https://disease.sh/v3/covid-19/historical/" + ISO + "?lastdays=356");
             HttpURLConnection connection = (HttpURLConnection) urlForGetRequest.openConnection();
             connection.setRequestMethod("GET");
 
@@ -210,8 +239,31 @@ public class MainController {
             catch (Exception ex) {
                 return "Exception: " + ex.getMessage();
             }
-
     }
+    private String getCountry(String ISO) {
+        try {
+            URL urlForGetRequest = new URL("https://disease.sh/v3/covid-19/countries/"+ ISO + "?strict=true");
+            HttpURLConnection connection = (HttpURLConnection) urlForGetRequest.openConnection();
+            connection.setRequestMethod("GET");
+
+            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = in.readLine()) != null) {
+                    response.append(line);
+                }
+                in.close();
+                return response.toString();
+            } else {
+                return "Unexpected HTTP response";
+            }
+        }
+        catch (Exception ex) {
+            return "Exception: " + ex.getMessage();
+        }
+    }
+
     private String getAllCountries() {
         try {
             URL urlForGetRequest = new URL("https://disease.sh/v3/covid-19/countries?yesterday=true&sort=cases");
@@ -236,6 +288,7 @@ public class MainController {
         }
 
     }
+
 
 
 }

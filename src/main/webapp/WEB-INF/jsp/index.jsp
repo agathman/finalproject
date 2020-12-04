@@ -16,8 +16,7 @@
     <h2>Cases by Country</h2>
     <form method ="get" action="/get/">
     <label>Date</label>
-
-  <a href="/viewSnapshots">View Snapshots</a>
+    <input type="date" name="date" value="noDate">
 
   <!-- ISO list found at https://www.freeformatter.com/iso-country-list-html-select.html -->
   <input list="search" name="country">
@@ -256,6 +255,7 @@
  </datalist>
  <input type="submit" value="Search">
  </form>
+  <a href="/viewSnapshots">View Snapshots</a>
 
 <br>
  <div class="container">
@@ -280,6 +280,8 @@
                     <td>${countries.getTotalDeaths()}</td>
                     <td>${countries.getRecovered()}</td>
                     <form method="post" action="/save/${countries.getCountryName()}">
+                    <input type="hidden" name="date" value="noDate">
+
                     <td><input type="submit" value="Save">
                     </form>
                     </tr>

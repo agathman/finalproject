@@ -12,7 +12,6 @@
        <th>Date</th>
        <th>Total Cases</th>
        <th>Total Deaths</th>
-       <th>New Cases</th>
        <th>User</th>
      </tr>
           <tr>
@@ -22,7 +21,6 @@
                  <td>${country.getDate()}</td>
                  <td>${country.getTotalCases()}</td>
                  <td>${country.getTotalDeaths()}</td>
-                 <td>${country.getNewCases()}</td>
                  <td><a href="/edit/${country.getId()}">Edit</a>
           </tr>
            </c:forEach>

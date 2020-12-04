@@ -16,16 +16,20 @@
         <th>Date</th>
         <th>Total Cases</th>
         <th>Total Deaths</th>
-        <th>New Cases</th>
         <th>Total Recovered</th>
+        <th></th>
       </tr>
            <tr>
                                   <td>${country.getCountryName()}</td>
                                   <td>${country.getDate()}</td>
                                   <td>${country.getTotalCases()}</td>
                                   <td>${country.getTotalDeaths()}</td>
-                                  <td>${country.getNewCases()}</td>
                                   <td>${country.getRecovered()}</td>
+
+                                  <form method="post" action="/save/${country.getCountryName()}">
+                                  <input type="hidden" name="date" value="${country.getDate()}">
+                                                      <td><input type="submit" value="Save">
+                                                      </form>
            </tr>
 
             </table>

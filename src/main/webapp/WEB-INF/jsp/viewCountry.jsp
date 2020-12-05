@@ -8,7 +8,7 @@
 
         <style><%@include file="../css/style.css"%></style>
 
- <body>
+ <body class="viewCountryBody">
   <a href="/">Home</a>
   <table>
       <tr>

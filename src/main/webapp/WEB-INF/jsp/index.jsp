@@ -15,7 +15,7 @@
             	theme: "light2", // "light1", "dark1", "dark2"
             	animationEnabled: true,
             	title: {
-            		text: "Global Cases"
+            		text: "Total Global Cases"
             	},
             	subtitles: [{
             		text: "January - December"
@@ -51,19 +51,21 @@
             }
             </script>
 
- <body>
+ <body class="bodyClass" style="text-align:center;">
 
 
  <div class="container1">
         <div class="container2">
 <h3 id="login"><a href="/loginPage">Login</a></h3>
+  <a href="/viewSnapshots">View Snapshots</a>
     <h1>Corona Virus Cases</h1>
     <div id="chartContainer" style="height: 370px; width: 100%;"></div>
         	<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
-    <h2>Cases by Country</h2>
+        	<br>
+        	<h3>Search for a Country</h3>
     <form method ="get" action="/get/">
     <label>Date</label>
-    <input type="date" name="date" value="noDate">
+    <input type="date" name="date" min="2020-01-22" max="2020-12-22">
 
   <!-- ISO list found at https://www.freeformatter.com/iso-country-list-html-select.html -->
   <input list="search" name="country">
@@ -302,8 +304,8 @@
  </datalist>
  <input type="submit" value="Search">
  </form>
-  <a href="/viewSnapshots">View Snapshots</a>
 
+<h2>Cases by Country</h2>
 <br>
  <div class="container">
         <table>

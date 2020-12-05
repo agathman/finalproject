@@ -12,7 +12,7 @@
        <th>Date</th>
        <th>Total Cases</th>
        <th>Total Deaths</th>
-       <th>User</th>
+       <th>Admin Controls</th>
      </tr>
           <tr>
              <c:forEach var = "country" items = "${countryList}">
@@ -22,6 +22,8 @@
                  <td>${country.getTotalCases()}</td>
                  <td>${country.getTotalDeaths()}</td>
                  <td><a href="/edit/${country.getId()}">Edit</a>
+                 <a href="/delete/${country.getId()}">Delete</a></td>
+
           </tr>
            </c:forEach>
            </table>

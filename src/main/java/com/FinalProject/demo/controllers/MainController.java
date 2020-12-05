@@ -24,11 +24,14 @@ import java.util.*;
 @Controller
 public class MainController {
 
+
     DateFormat formatter = new SimpleDateFormat("MM-dd-yyyy");
     Date date = new Date();
     String currentDate = formatter.format(date);
     //Formatted to match API
-    DateFormat formatter2 = new SimpleDateFormat("M/d/yy");
+    DateFormat apiFormat = new SimpleDateFormat("M/d/yy");
+    DateFormat htmlFormat = new SimpleDateFormat("yyyy-MM-dd");
+    String currentDateWHTMLFormat = htmlFormat.format(date);
 
 
     @Autowired
@@ -54,8 +57,6 @@ public class MainController {
         CanvasjsChartData chartCasesDataObject = new CanvasjsChartData();
         List<List<Map<Object, Object>>> canvasjsCasesDataList = chartCasesDataObject.getCanvasjsCasesDataList();
         mv.addObject("dataPointsList", canvasjsCasesDataList);
-
-
         return mv;
     }
 
@@ -109,26 +110,48 @@ public class MainController {
     @RequestMapping(value = "/get", method = RequestMethod.GET)
     public ModelAndView getCountry(@RequestParam("country") String countryIso, @RequestParam("date") String datePicked) throws ParseException {
         ModelAndView mv = new ModelAndView("viewCountry");
-        String country = getCountryByISO(countryIso);
 
-        DateFormat formatFor = new SimpleDateFormat("yyyy-MM-dd");
-        Date foundDate = formatFor.parse(datePicked);
-        String dateSelected = formatter2.format(foundDate);
-        String dateForView = formatter.format(foundDate);
+
+        Date dateFound = formatDateMethodView(datePicked);
+
+        //Date for fetching historical data
+        String dateFoundApi = apiFormat.format(dateFound);
+        String dateFoundHtml = htmlFormat.format(dateFound);
+        String dateForView = formatter.format(dateFound);
+
 
         Country selectedCountry = new Country();
-        try {
-            JSONObject json = new JSONObject(country);
-            selectedCountry.setCountryName(json.get("country").toString());
-            selectedCountry.setTotalCases(json.getJSONObject("timeline").getJSONObject("cases").getInt(dateSelected));
-            selectedCountry.setDate(dateForView);
-            selectedCountry.setTotalDeaths(json.getJSONObject("timeline").getJSONObject("deaths").getInt(dateSelected));
-            selectedCountry.setRecovered(json.getJSONObject("timeline").getJSONObject("recovered").getInt(dateSelected));
-            mv.addObject("country", selectedCountry);
+        if (currentDateWHTMLFormat.equals(dateFoundHtml) || datePicked.equals(currentDate)) {
+            try {
+                String country = getCountry(countryIso);
+                JSONObject json = new JSONObject(country);
+                selectedCountry.setCountryName(json.get("country").toString());
+                selectedCountry.setDate(currentDate);
+                selectedCountry.setTotalCases(json.getInt("cases"));
+                selectedCountry.setTotalDeaths(json.getInt("deaths"));
+                selectedCountry.setRecovered(json.getInt("recovered"));
+                mv.addObject("country", selectedCountry);
 
-        } catch (Exception ex) {
-            System.out.println(ex.toString());
+            } catch (Exception ex) {
+                System.out.println(ex.toString());
+            }
         }
+            else {
+                try {
+                    String country = getCountryByISO(countryIso);
+                    JSONObject json = new JSONObject(country);
+                    selectedCountry.setCountryName(json.get("country").toString());
+                    selectedCountry.setTotalCases(json.getJSONObject("timeline").getJSONObject("cases").getInt(dateFoundApi));
+                    selectedCountry.setDate(dateForView);
+                    selectedCountry.setTotalDeaths(json.getJSONObject("timeline").getJSONObject("deaths").getInt(dateFoundApi));
+                    selectedCountry.setRecovered(json.getJSONObject("timeline").getJSONObject("recovered").getInt(dateFoundApi));
+                    mv.addObject("country", selectedCountry);
+                }
+                catch (Exception ex) {
+                    System.out.println(ex);
+                }
+
+            }
         return mv;
 
     }
@@ -137,12 +160,12 @@ public class MainController {
     public ModelAndView save(@PathVariable("countryName") String name, @RequestParam("date") String datePicked) throws ParseException {
         ModelAndView mv = new ModelAndView("redirect:/");
 
-        DateFormat formatFor = new SimpleDateFormat("yyyy-MM-dd");
-        Date htmlDate = formatFor.parse(datePicked);
-        String date2 = formatFor.format(htmlDate);
-        String dateSelected;
 
-        if (datePicked.equals("noDate") || datePicked.equals(date2)) {
+            Date dateFound = formatDateMethodSave(datePicked);
+            String dateFoundApi = apiFormat.format(dateFound);
+
+
+        if (datePicked.equals(currentDate)) {
             try {
                 String country = getCountry(name);
                 JSONObject json = new JSONObject(country);
@@ -159,20 +182,17 @@ public class MainController {
 
             }
         } else {
-            Date foundDate = formatter2.parse(datePicked);
-            dateSelected = formatter2.format(foundDate);
-            String country = getCountryByISO(name);
-            String dateStored = formatter.format(foundDate);
+            String dateStored = formatter.format(dateFound);
             try {
-                getCountryByISO(name);
+                String country = getCountryByISO(name);
                 JSONObject json = new JSONObject(country);
                 Country countryToSave = new Country();
                 countryToSave.setId(UUID.randomUUID().toString());
                 countryToSave.setCountryName(json.get("country").toString());
                 countryToSave.setDate(dateStored);
-                countryToSave.setTotalCases(json.getJSONObject("timeline").getJSONObject("cases").getInt(dateSelected));
-                countryToSave.setTotalDeaths(json.getJSONObject("timeline").getJSONObject("deaths").getInt(dateSelected));
-                countryToSave.setRecovered(json.getJSONObject("timeline").getJSONObject("recovered").getInt(dateSelected));
+                countryToSave.setTotalCases(json.getJSONObject("timeline").getJSONObject("cases").getInt(dateFoundApi));
+                countryToSave.setTotalDeaths(json.getJSONObject("timeline").getJSONObject("deaths").getInt(dateFoundApi));
+                countryToSave.setRecovered(json.getJSONObject("timeline").getJSONObject("recovered").getInt(dateFoundApi));
                 countryRepo.save(countryToSave);
             } catch (Exception ex) {
                 System.out.println(ex.toString());
@@ -221,6 +241,12 @@ public class MainController {
         country.setTotalDeaths(Integer.parseInt(totalDeaths));
         country.setNewCases(Integer.parseInt(newCases));
         countryRepo.save(country);
+        return mv;
+    }
+    @RequestMapping(value = "/delete/{id}", method = RequestMethod.GET)
+    public ModelAndView delete(@PathVariable("id") String id) {
+        ModelAndView mv = new ModelAndView("redirect:/viewSnapshots");
+        countryRepo.deleteById(id);
         return mv;
     }
 
@@ -321,8 +347,29 @@ public class MainController {
 
         }
     }
+    private Date formatDateMethodView(String datePicked) throws ParseException {
+        try {
+            Date dateFound = htmlFormat.parse(datePicked);
+            String foundDate = htmlFormat.format(dateFound);
+            System.out.println(foundDate);
 
+            return dateFound;
+        } catch (Exception ex) {
+          return date;
+        }
+    }
+    private Date formatDateMethodSave(String datePicked) throws ParseException {
+        try {
+            Date dateFound = formatter.parse(datePicked);
+            String foundDate = apiFormat.format(dateFound);
+            System.out.println(foundDate);
+            return dateFound;
+        } catch (Exception ex) {
+            System.out.println(ex);
+            return date;
+        }
 
+    }
 
 
 }

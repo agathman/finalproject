@@ -38,13 +38,10 @@ public class CanvasjsChartData {
                 j++;
                 month[i] = j + "/1/20";
                 monthCases[i] = cases.getInt(month[i]);
-                System.out.println("CASES BY MONTH  " + monthCases[i] + "\n");
                 casesMap = new HashMap<Object, Object>();
                 casesMap.put("label", monthNames[i+1]);
                 casesMap.put("y", monthCases[i]);
                 casesDataPoints.add(casesMap);
-
-
             }
             casesList.add(casesDataPoints);
 
@@ -57,4 +54,8 @@ public static List<List<Map<Object, Object>>> getCanvasjsCasesDataList() {
         return casesList;
     }
 
+
 }
+
+
+

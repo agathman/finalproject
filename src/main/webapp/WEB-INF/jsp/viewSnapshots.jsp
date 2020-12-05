@@ -12,6 +12,8 @@
        <th>Date</th>
        <th>Total Cases</th>
        <th>Total Deaths</th>
+       <th>Total Recovered</th>
+       <th>Chart</th>
        <th>Admin Controls</th>
      </tr>
           <tr>
@@ -21,6 +23,7 @@
                  <td>${country.getDate()}</td>
                  <td>${country.getTotalCases()}</td>
                  <td>${country.getTotalDeaths()}</td>
+                 <td>${country.getRecovered()}</td>
                  <td><a href="/viewChart/${country.getId()}">View Chart</a></td>
                  <td><a href="/edit/${country.getId()}">Edit</a>
                  <a href="/delete/${country.getId()}">Delete</a></td>

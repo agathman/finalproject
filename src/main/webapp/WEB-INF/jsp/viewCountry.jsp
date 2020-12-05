@@ -9,7 +9,7 @@
         <style><%@include file="../css/style.css"%></style>
 
  <body class="viewCountryBody">
-  <a href="/">Home</a>
+  <a href="/">Home</a> <a href="/viewSnapshots">View Snapshots</a>
   <table>
       <tr>
         <th>Country</th>

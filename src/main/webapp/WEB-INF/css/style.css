@@ -1,3 +1,4 @@
+/* Some css for table found on https://codepen.io/florantara/pen/dROvdb */
 html,
 .bodyClass {
 	height: 100%;
@@ -5,7 +6,7 @@ html,
 
 body {
 	margin: 0;
-	background: linear-gradient(45deg, #49a09d, #2C7483);
+	background: linear-gradient(45deg, #0066CC, #0080FF);
 	font-family: sans-serif;
 	font-weight: 100;
 }
@@ -57,7 +58,12 @@ tbody {
 		}
 	}
 }
-
+    a {
+    color: white;
+    }
+    a:visted {
+    color: green;
+    }
 
     .loginBody, .loginHtml {
 		margin: 50px;

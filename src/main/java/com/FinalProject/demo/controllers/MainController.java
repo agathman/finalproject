@@ -38,13 +38,8 @@ public class MainController {
     CountryRepo countryRepo;
     @Autowired
     UsersRepo usersRepo;
-    @Autowired
-    private Environment en;
 
     Users currentUser = new Users();
-    Country foundCountry = new Country();
-
-
 
     @RequestMapping(value = "/loginPage")
     public ModelAndView login() {
@@ -52,24 +47,16 @@ public class MainController {
         return mv;
     }
 
-    @RequestMapping(value = "/chart", method = RequestMethod.GET)
-    public ModelAndView chart() {
-        ModelAndView mv = new ModelAndView("chart");
-
-        CanvasjsChartData chartCasesDataObject = new CanvasjsChartData();
-        List<List<Map<Object, Object>>> canvasjsCasesDataList = chartCasesDataObject.getCanvasjsCasesDataList();
-        mv.addObject("dataPointsList", canvasjsCasesDataList);
-        return mv;
-    }
-
+    //Login model and view
     @RequestMapping(value = "/login", method = RequestMethod.GET)
     public ModelAndView getLogin(@RequestParam("userName") String userName, @RequestParam("passWord") String passWord) {
 
         Users userLogin = usersRepo.findByUserName(userName);
         String userPassword = userLogin.getPassword();
-
+        //password verification
         if (passWord.equals(userPassword)) {
             ModelAndView mv = new ModelAndView("redirect:/");
+            //Current user privilege set
             currentUser.setAdmin(userLogin.getAdmin());
             return mv;
         } else {
@@ -79,14 +66,17 @@ public class MainController {
             return mv;
         }
     }
-
+    //Index modelandview
     @RequestMapping(value = "/")
     public ModelAndView allCountries() {
         ModelAndView mv = new ModelAndView("index");
+
+        //Adds line chart
         CanvasjsChartData chartCasesDataObject = new CanvasjsChartData();
         List<List<Map<Object, Object>>> canvasjsCasesDataList = chartCasesDataObject.getCanvasjsCasesDataList();
         mv.addObject("dataPointsList", canvasjsCasesDataList);
         String countries = getAllCountries();
+        //Adds API data to html table
         try {
             JSONArray json = new JSONArray(countries);
             Country[] allCountries = new Country[50];
@@ -123,7 +113,8 @@ public class MainController {
 
 
         Country selectedCountry = new Country();
-        if (currentDateWHTMLFormat.equals(dateFoundHtml) || datePicked.equals(currentDate)) {
+        //Fetch data from most recent API
+        if (dateForView.equals(currentDate)) {
             try {
                 String country = getCountry(countryIso);
                 JSONObject json = new JSONObject(country);
@@ -138,6 +129,7 @@ public class MainController {
                 System.out.println(ex.toString());
             }
         }
+            //Fetch data from historical api
             else {
                 try {
                     String country = getCountryByISO(countryIso);
@@ -163,11 +155,13 @@ public class MainController {
         ModelAndView mv = new ModelAndView("redirect:/");
 
 
-            Date dateFound = formatDateMethodSave(datePicked);
-            String dateFoundApi = apiFormat.format(dateFound);
 
+            Date apiDateFormat = formatDateMethodSave(datePicked);
+            String dateFoundApi = apiFormat.format(apiDateFormat);
+            String selectedDate = formatter.format(apiDateFormat);
 
-        if (datePicked.equals(currentDate)) {
+        //Fetch data from most recent API
+        if (selectedDate.equals(currentDate)) {
             try {
                 String country = getCountry(name);
                 JSONObject json = new JSONObject(country);
@@ -184,14 +178,14 @@ public class MainController {
 
             }
         } else {
-            String dateStored = formatter.format(dateFound);
+            //Fetch data from historical API
             try {
                 String country = getCountryByISO(name);
                 JSONObject json = new JSONObject(country);
                 Country countryToSave = new Country();
                 countryToSave.setId(UUID.randomUUID().toString());
                 countryToSave.setCountryName(json.get("country").toString());
-                countryToSave.setDate(dateStored);
+                countryToSave.setDate(selectedDate);
                 countryToSave.setTotalCases(json.getJSONObject("timeline").getJSONObject("cases").getInt(dateFoundApi));
                 countryToSave.setTotalDeaths(json.getJSONObject("timeline").getJSONObject("deaths").getInt(dateFoundApi));
                 countryToSave.setRecovered(json.getJSONObject("timeline").getJSONObject("recovered").getInt(dateFoundApi));
@@ -203,18 +197,19 @@ public class MainController {
 
         return mv;
     }
-
+    //Snapshot modelandview
     @RequestMapping(value = "/viewSnapshots")
     public ModelAndView viewSnapshots() {
         ModelAndView mv = new ModelAndView("viewSnapshots");
         mv.addObject("countryList", countryRepo.findAll());
         return mv;
     }
-
+    //Edit db snapshots modelandview
     @RequestMapping(value = "/edit/{id}", method = RequestMethod.GET)
     public ModelAndView edit(@PathVariable("id") String id) {
         ModelAndView mv;
         try {
+            //Check admin privileges Try/catch to prevent null pointer exception when no user has logged in
             if (currentUser.getAdmin()) {
                 mv = new ModelAndView("edit");
                 Optional<Country> countryRecord = countryRepo.findById(id);
@@ -231,7 +226,7 @@ public class MainController {
         return mv2;
     }
 
-
+    //Submit changes from edit page
     @RequestMapping(value = "/submitChanges", method = RequestMethod.POST)
     public ModelAndView changes(@RequestParam("id") String id, @RequestParam("totalCases") String totalCases, @RequestParam("totalDeaths") String totalDeaths,
                                 @RequestParam("newCases") String newCases) {
@@ -239,7 +234,7 @@ public class MainController {
         Optional<Country> countryRecord = countryRepo.findById(id);
         Country country = countryRecord.get();
 
-        // country.setTotalCases(Integer.parseInt(totalCases));
+        country.setTotalCases(Integer.parseInt(totalCases));
         country.setTotalDeaths(Integer.parseInt(totalDeaths));
         country.setNewCases(Integer.parseInt(newCases));
         countryRepo.save(country);
@@ -264,7 +259,7 @@ public class MainController {
         int countryDeaths = c1.getTotalDeaths();
         int countryRecovered = c1.getRecovered();
         int countryCases = c1.getTotalCases();
-
+        //Add data to pie chart
         CanvasjsPieChart chartDataObject = new CanvasjsPieChart();
         List<List<Map<Object, Object>>> canvasjsDataList = chartDataObject.getCanvasjsDataList();
         chartDataObject.map = new HashMap<Object,Object>();
@@ -286,8 +281,6 @@ public class MainController {
 
         return mv;
     }
-
-
 
     private String getCountryByISO(String ISO) {
         try {
@@ -357,33 +350,7 @@ public class MainController {
             return "Exception: " + ex.getMessage();
         }
 
-    }
 
-    private void ParseJSONFile(String ISO) {
-        String url = "https://disease.sh/v3/covid-19/historical/" + ISO + "?lastdays=356";
-
-        try {
-            HttpResponse<String> response = Unirest.get(url).asString();
-            String json = response.getBody();
-            JSONObject jsonObj = new JSONObject(json);
-
-            JSONObject timeline = jsonObj.getJSONObject("timeline");
-            JSONObject cases = timeline.getJSONObject("cases");
-
-            String month[] = new String[12];
-            int monthCases[] = new int[11];
-            int j = 1;
-            for(int i = 0; i < 11; i++) {
-                j++;
-                month[i] = j + "/1/20";
-                monthCases[i] = cases.getInt(month[i]);
-                System.out.println("CASES BY MONTH  " + monthCases[i] + "\n");
-            }
-
-        } catch (Exception ex) {
-            System.out.println(ex);
-
-        }
     }
     private Date formatDateMethodView(String datePicked) throws ParseException {
         try {

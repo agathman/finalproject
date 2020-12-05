@@ -34,67 +34,69 @@ public class Country {
 
     }
 
-    public String getId() {
-        return id;
-    }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+        public String getId () {
+            return id;
+        }
 
-    public String getCountryName() {
-        return countryName;
-    }
+        public void setId (String id){
+            this.id = id;
+        }
 
-    public void setCountryName(String countryName) {
-        this.countryName = countryName;
-    }
+        public String getCountryName () {
+            return countryName;
+        }
 
-    public String getDate() {
-        return date;
-    }
+        public void setCountryName (String countryName){
+            this.countryName = countryName;
+        }
 
-    public void setDate(String date) {
-        this.date = date;
-    }
+        public String getDate () {
+            return date;
+        }
 
-    public int getTotalCases() {
-        return totalCases;
-    }
+        public void setDate (String date){
+            this.date = date;
+        }
 
-    public void setTotalCases(int totalCases) {
-        this.totalCases = totalCases;
-    }
+        public int getTotalCases () {
+            return totalCases;
+        }
 
-    public int getTotalDeaths() {
-        return totalDeaths;
-    }
+        public void setTotalCases ( int totalCases){
+            this.totalCases = totalCases;
+        }
 
-    public void setTotalDeaths(int totalDeaths) {
-        this.totalDeaths = totalDeaths;
-    }
+        public int getTotalDeaths () {
+            return totalDeaths;
+        }
 
-    public int getNewCases() {
-        return newCases;
-    }
+        public void setTotalDeaths ( int totalDeaths){
+            this.totalDeaths = totalDeaths;
+        }
 
-    public void setNewCases(int newCases) {
-        this.newCases = newCases;
-    }
+        public int getNewCases () {
+            return newCases;
+        }
 
-    public String getUserId() {
-        return userId;
-    }
+        public void setNewCases ( int newCases){
+            this.newCases = newCases;
+        }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
+        public String getUserId () {
+            return userId;
+        }
 
-    public int getRecovered() {
-        return recovered;
-    }
+        public void setUserId (String userId){
+            this.userId = userId;
+        }
 
-    public void setRecovered(int recovered) {
-        this.recovered = recovered;
-    }
+        public int getRecovered () {
+            return recovered;
+        }
+
+        public void setRecovered ( int recovered){
+            this.recovered = recovered;
+        }
+
 }

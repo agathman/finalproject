@@ -1,16 +1,20 @@
-package com.FinalProject.demo.Models;
+package com.FinalProject.demo.controllers;
 
 
+import com.FinalProject.demo.Models.Country;
+import com.FinalProject.demo.Models.CountryRepo;
+
+import com.FinalProject.demo.controllers.MainController;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-public class CanvasjsChartData {
+import java.util.*;
+
+
+public class CanvasjsChartData extends MainController {
 
 
     static Map<Object, Object> casesMap = null;
@@ -50,9 +54,12 @@ public class CanvasjsChartData {
 
         }
     }
-public static List<List<Map<Object, Object>>> getCanvasjsCasesDataList() {
+
+
+    public static List<List<Map<Object, Object>>> getCanvasjsCasesDataList() {
         return casesList;
     }
+
 
 
 }

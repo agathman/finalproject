@@ -21,6 +21,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+
 @Controller
 public class MainController {
 
@@ -33,7 +34,6 @@ public class MainController {
     DateFormat htmlFormat = new SimpleDateFormat("yyyy-MM-dd");
     String currentDateWHTMLFormat = htmlFormat.format(date);
 
-
     @Autowired
     CountryRepo countryRepo;
     @Autowired
@@ -42,6 +42,8 @@ public class MainController {
     private Environment en;
 
     Users currentUser = new Users();
+    Country foundCountry = new Country();
+
 
 
     @RequestMapping(value = "/loginPage")
@@ -249,6 +251,42 @@ public class MainController {
         countryRepo.deleteById(id);
         return mv;
     }
+
+
+    @RequestMapping(value = "viewChart/{id}", method = RequestMethod.GET)
+    public ModelAndView viewChart(@PathVariable("id") String id) {
+        ModelAndView mv = new ModelAndView("viewChart");
+
+        Optional<Country> countryRecord = countryRepo.findById(id);
+
+        Country c1 = countryRecord.get();
+
+        int countryDeaths = c1.getTotalDeaths();
+        int countryRecovered = c1.getRecovered();
+        int countryCases = c1.getTotalCases();
+
+        CanvasjsPieChart chartDataObject = new CanvasjsPieChart();
+        List<List<Map<Object, Object>>> canvasjsDataList = chartDataObject.getCanvasjsDataList();
+        chartDataObject.map = new HashMap<Object,Object>();
+        chartDataObject.map.put("label", "Cases");
+        chartDataObject.map.put("y", countryCases);
+        chartDataObject.dataPoints1.add(chartDataObject.map);
+        chartDataObject.map = new HashMap<Object,Object>();
+        chartDataObject.map.put("label", "Deaths");
+        chartDataObject.map.put("y", countryDeaths);
+        chartDataObject.dataPoints1.add(chartDataObject.map);
+        chartDataObject.map = new HashMap<Object,Object>();
+        chartDataObject.map.put("label", "Recovered");
+        chartDataObject.map.put("y", countryRecovered);
+        chartDataObject.dataPoints1.add(chartDataObject.map);
+
+
+        mv.addObject("dataPointsList", canvasjsDataList);
+
+
+        return mv;
+    }
+
 
 
     private String getCountryByISO(String ISO) {

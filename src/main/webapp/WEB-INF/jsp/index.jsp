@@ -7,12 +7,59 @@
         </head>
 
         <style><%@include file="../css/style.css"%></style>
+         <script type="text/javascript">
+            window.onload = function() {
+
+            var dps = [[]];
+            var chart = new CanvasJS.Chart("chartContainer", {
+            	theme: "light2", // "light1", "dark1", "dark2"
+            	animationEnabled: true,
+            	title: {
+            		text: "Global Cases"
+            	},
+            	subtitles: [{
+            		text: "January - December"
+            	}],
+
+            	axisY: {
+            		title: "Cases"
+            	},
+            	data: [{
+            		type: "spline",
+
+            		yValueFormatString: "#,##0 Cases",
+            		dataPoints: dps[0]
+            	}]
+            });
+
+            var label;
+            var yValue;
+
+            <c:forEach items="${dataPointsList}" var="dataPoints" varStatus="loop">
+            	<c:forEach items="${dataPoints}" var="dataPoint">
+            		label = "${dataPoint.label}";
+            		yValue = parseFloat("${dataPoint.y}");
+            		dps[parseInt("${loop.index}")].push({
+            			label : label,
+            			y : yValue
+            		});
+            	</c:forEach>
+            </c:forEach>
+
+            chart.render();
+
+            }
+            </script>
 
  <body>
+
+
  <div class="container1">
         <div class="container2">
 <h3 id="login"><a href="/loginPage">Login</a></h3>
     <h1>Corona Virus Cases</h1>
+    <div id="chartContainer" style="height: 370px; width: 100%;"></div>
+        	<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
     <h2>Cases by Country</h2>
     <form method ="get" action="/get/">
     <label>Date</label>

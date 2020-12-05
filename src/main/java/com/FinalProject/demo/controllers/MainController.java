@@ -1,8 +1,8 @@
 package com.FinalProject.demo.controllers;
-import com.FinalProject.demo.Models.Country;
-import com.FinalProject.demo.Models.CountryRepo;
-import com.FinalProject.demo.Models.Users;
-import com.FinalProject.demo.Models.UsersRepo;
+import com.FinalProject.demo.Models.*;
+import com.mashape.unirest.http.HttpResponse;
+import org.springframework.core.env.Environment;
+import com.mashape.unirest.http.Unirest;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,12 +31,12 @@ public class MainController {
     DateFormat formatter2 = new SimpleDateFormat("M/d/yy");
 
 
-
-
     @Autowired
     CountryRepo countryRepo;
     @Autowired
     UsersRepo usersRepo;
+    @Autowired
+    private Environment en;
 
     Users currentUser = new Users();
 
@@ -47,32 +47,47 @@ public class MainController {
         return mv;
     }
 
+    @RequestMapping(value = "/chart", method = RequestMethod.GET)
+    public ModelAndView chart() {
+        ModelAndView mv = new ModelAndView("chart");
+
+        CanvasjsChartData chartCasesDataObject = new CanvasjsChartData();
+        List<List<Map<Object, Object>>> canvasjsCasesDataList = chartCasesDataObject.getCanvasjsCasesDataList();
+        mv.addObject("dataPointsList", canvasjsCasesDataList);
+
+
+        return mv;
+    }
+
     @RequestMapping(value = "/login", method = RequestMethod.GET)
-        public ModelAndView getLogin(@RequestParam("userName") String userName, @RequestParam("passWord") String passWord) {
+    public ModelAndView getLogin(@RequestParam("userName") String userName, @RequestParam("passWord") String passWord) {
 
         Users userLogin = usersRepo.findByUserName(userName);
         String userPassword = userLogin.getPassword();
 
-            if(passWord.equals(userPassword)) {
-                ModelAndView mv = new ModelAndView("redirect:/");
-                currentUser.setAdmin(userLogin.getAdmin());
-                return mv;
-            }
-            else {
-                String incorrect = "Username or Password is incorrect";
-                ModelAndView mv = new ModelAndView("redirect:/");
-                mv.addObject("incorrectLogin", incorrect);
-                return mv;
-            }
+        if (passWord.equals(userPassword)) {
+            ModelAndView mv = new ModelAndView("redirect:/");
+            currentUser.setAdmin(userLogin.getAdmin());
+            return mv;
+        } else {
+            String incorrect = "Username or Password is incorrect";
+            ModelAndView mv = new ModelAndView("redirect:/");
+            mv.addObject("incorrectLogin", incorrect);
+            return mv;
+        }
     }
+
     @RequestMapping(value = "/")
     public ModelAndView allCountries() {
         ModelAndView mv = new ModelAndView("index");
+        CanvasjsChartData chartCasesDataObject = new CanvasjsChartData();
+        List<List<Map<Object, Object>>> canvasjsCasesDataList = chartCasesDataObject.getCanvasjsCasesDataList();
+        mv.addObject("dataPointsList", canvasjsCasesDataList);
         String countries = getAllCountries();
         try {
             JSONArray json = new JSONArray(countries);
             Country[] allCountries = new Country[50];
-            for(int i = 0; i < 50; i++) {
+            for (int i = 0; i < 50; i++) {
                 JSONObject countryList = json.getJSONObject(i);
                 String country = countryList.getString("country");
                 allCountries[i] = new Country();
@@ -85,15 +100,14 @@ public class MainController {
 
             }
             mv.addObject("countryNames", allCountries);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             System.out.println(ex.toString());
         }
         return mv;
     }
 
     @RequestMapping(value = "/get", method = RequestMethod.GET)
-        public ModelAndView getCountry(@RequestParam ("country")String countryIso, @RequestParam ("date") String datePicked) throws ParseException {
+    public ModelAndView getCountry(@RequestParam("country") String countryIso, @RequestParam("date") String datePicked) throws ParseException {
         ModelAndView mv = new ModelAndView("viewCountry");
         String country = getCountryByISO(countryIso);
 
@@ -112,8 +126,7 @@ public class MainController {
             selectedCountry.setRecovered(json.getJSONObject("timeline").getJSONObject("recovered").getInt(dateSelected));
             mv.addObject("country", selectedCountry);
 
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             System.out.println(ex.toString());
         }
         return mv;
@@ -121,54 +134,52 @@ public class MainController {
     }
 
     @RequestMapping(value = "/save/{countryName}", method = RequestMethod.POST)
-    public ModelAndView save(@PathVariable("countryName") String name, @RequestParam ("date") String datePicked) throws ParseException {
-                ModelAndView mv = new ModelAndView("redirect:/");
+    public ModelAndView save(@PathVariable("countryName") String name, @RequestParam("date") String datePicked) throws ParseException {
+        ModelAndView mv = new ModelAndView("redirect:/");
 
-                DateFormat formatFor = new SimpleDateFormat("yyyy-MM-dd");
-                Date htmlDate = formatFor.parse(datePicked);
-                String date2 = formatFor.format(htmlDate);
-                String dateSelected;
+        DateFormat formatFor = new SimpleDateFormat("yyyy-MM-dd");
+        Date htmlDate = formatFor.parse(datePicked);
+        String date2 = formatFor.format(htmlDate);
+        String dateSelected;
 
-                if(datePicked.equals("noDate") || datePicked.equals(date2)) {
-                    try {
-                        String country = getCountry(name);
-                        JSONObject json = new JSONObject(country);
-                        Country countryToSave = new Country();
-                        countryToSave.setId(UUID.randomUUID().toString());
-                        countryToSave.setCountryName(json.get("country").toString());
-                        countryToSave.setDate(currentDate);
-                        countryToSave.setTotalCases(json.getInt("cases"));
-                        countryToSave.setTotalDeaths(json.getInt("deaths"));
-                        countryToSave.setRecovered(json.getInt("recovered"));
-                        countryRepo.save(countryToSave);
-                    } catch (Exception ex) {
-                        System.out.println(ex.toString());
+        if (datePicked.equals("noDate") || datePicked.equals(date2)) {
+            try {
+                String country = getCountry(name);
+                JSONObject json = new JSONObject(country);
+                Country countryToSave = new Country();
+                countryToSave.setId(UUID.randomUUID().toString());
+                countryToSave.setCountryName(json.get("country").toString());
+                countryToSave.setDate(currentDate);
+                countryToSave.setTotalCases(json.getInt("cases"));
+                countryToSave.setTotalDeaths(json.getInt("deaths"));
+                countryToSave.setRecovered(json.getInt("recovered"));
+                countryRepo.save(countryToSave);
+            } catch (Exception ex) {
+                System.out.println(ex.toString());
 
-                    }
-                }
-                else{
-                        Date foundDate = formatter2.parse(datePicked);
-                        dateSelected = formatter2.format(foundDate);
-                        String country = getCountryByISO(name);
-                        String dateStored = formatter.format(foundDate);
-                    try {
-                        getCountryByISO(name);
-                        JSONObject json = new JSONObject(country);
-                        Country countryToSave = new Country();
-                        countryToSave.setId(UUID.randomUUID().toString());
-                        countryToSave.setCountryName(json.get("country").toString());
-                        countryToSave.setDate(dateStored);
-                        countryToSave.setTotalCases(json.getJSONObject("timeline").getJSONObject("cases").getInt(dateSelected));
-                        countryToSave.setTotalDeaths(json.getJSONObject("timeline").getJSONObject("deaths").getInt(dateSelected));
-                        countryToSave.setRecovered(json.getJSONObject("timeline").getJSONObject("recovered").getInt(dateSelected));
-                        countryRepo.save(countryToSave);
-                    }
-                    catch (Exception ex) {
-                        System.out.println(ex.toString());
-                    }
-                }
+            }
+        } else {
+            Date foundDate = formatter2.parse(datePicked);
+            dateSelected = formatter2.format(foundDate);
+            String country = getCountryByISO(name);
+            String dateStored = formatter.format(foundDate);
+            try {
+                getCountryByISO(name);
+                JSONObject json = new JSONObject(country);
+                Country countryToSave = new Country();
+                countryToSave.setId(UUID.randomUUID().toString());
+                countryToSave.setCountryName(json.get("country").toString());
+                countryToSave.setDate(dateStored);
+                countryToSave.setTotalCases(json.getJSONObject("timeline").getJSONObject("cases").getInt(dateSelected));
+                countryToSave.setTotalDeaths(json.getJSONObject("timeline").getJSONObject("deaths").getInt(dateSelected));
+                countryToSave.setRecovered(json.getJSONObject("timeline").getJSONObject("recovered").getInt(dateSelected));
+                countryRepo.save(countryToSave);
+            } catch (Exception ex) {
+                System.out.println(ex.toString());
+            }
+        }
 
-                return mv;
+        return mv;
     }
 
     @RequestMapping(value = "/viewSnapshots")
@@ -178,43 +189,40 @@ public class MainController {
         return mv;
     }
 
-    @RequestMapping(value ="/edit/{id}", method = RequestMethod.GET)
+    @RequestMapping(value = "/edit/{id}", method = RequestMethod.GET)
     public ModelAndView edit(@PathVariable("id") String id) {
         ModelAndView mv;
         try {
-        if (currentUser.getAdmin()) {
-            mv = new ModelAndView("edit");
-            Optional<Country> countryRecord = countryRepo.findById(id);
-            Country country = countryRecord.get();
-            mv.addObject("country", country);
+            if (currentUser.getAdmin()) {
+                mv = new ModelAndView("edit");
+                Optional<Country> countryRecord = countryRepo.findById(id);
+                Country country = countryRecord.get();
+                mv.addObject("country", country);
+                return mv;
+            }
+
+        } catch (NullPointerException ex) {
+            mv = new ModelAndView("accessDenied");
             return mv;
         }
-
-    }
-    catch (NullPointerException ex) {
-        mv = new ModelAndView("accessDenied");
-        return mv;
-        }
         ModelAndView mv2 = new ModelAndView("viewSnapshots");
-    return mv2;
+        return mv2;
     }
 
 
-    @RequestMapping(value="/submitChanges", method = RequestMethod.POST)
-    public ModelAndView changes(@RequestParam("id")String id, @RequestParam("totalCases") String totalCases, @RequestParam("totalDeaths")String totalDeaths,
+    @RequestMapping(value = "/submitChanges", method = RequestMethod.POST)
+    public ModelAndView changes(@RequestParam("id") String id, @RequestParam("totalCases") String totalCases, @RequestParam("totalDeaths") String totalDeaths,
                                 @RequestParam("newCases") String newCases) {
         ModelAndView mv = new ModelAndView("redirect:/viewSnapshots");
         Optional<Country> countryRecord = countryRepo.findById(id);
         Country country = countryRecord.get();
 
-       // country.setTotalCases(Integer.parseInt(totalCases));
+        // country.setTotalCases(Integer.parseInt(totalCases));
         country.setTotalDeaths(Integer.parseInt(totalDeaths));
         country.setNewCases(Integer.parseInt(newCases));
         countryRepo.save(country);
         return mv;
     }
-
-
 
 
     private String getCountryByISO(String ISO) {
@@ -235,14 +243,14 @@ public class MainController {
             } else {
                 return "Unexpected HTTP response";
             }
+        } catch (Exception ex) {
+            return "Exception: " + ex.getMessage();
         }
-            catch (Exception ex) {
-                return "Exception: " + ex.getMessage();
-            }
     }
+
     private String getCountry(String ISO) {
         try {
-            URL urlForGetRequest = new URL("https://disease.sh/v3/covid-19/countries/"+ ISO + "?strict=true");
+            URL urlForGetRequest = new URL("https://disease.sh/v3/covid-19/countries/" + ISO + "?strict=true");
             HttpURLConnection connection = (HttpURLConnection) urlForGetRequest.openConnection();
             connection.setRequestMethod("GET");
 
@@ -258,8 +266,7 @@ public class MainController {
             } else {
                 return "Unexpected HTTP response";
             }
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             return "Exception: " + ex.getMessage();
         }
     }
@@ -282,12 +289,39 @@ public class MainController {
             } else {
                 return "Unexpected HTTP response";
             }
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             return "Exception: " + ex.getMessage();
         }
 
     }
+
+    private void ParseJSONFile(String ISO) {
+        String url = "https://disease.sh/v3/covid-19/historical/" + ISO + "?lastdays=356";
+
+        try {
+            HttpResponse<String> response = Unirest.get(url).asString();
+            String json = response.getBody();
+            JSONObject jsonObj = new JSONObject(json);
+
+            JSONObject timeline = jsonObj.getJSONObject("timeline");
+            JSONObject cases = timeline.getJSONObject("cases");
+
+            String month[] = new String[12];
+            int monthCases[] = new int[11];
+            int j = 1;
+            for(int i = 0; i < 11; i++) {
+                j++;
+                month[i] = j + "/1/20";
+                monthCases[i] = cases.getInt(month[i]);
+                System.out.println("CASES BY MONTH  " + monthCases[i] + "\n");
+            }
+
+        } catch (Exception ex) {
+            System.out.println(ex);
+
+        }
+    }
+
 
 
 
